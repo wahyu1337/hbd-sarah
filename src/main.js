@@ -30,8 +30,7 @@ app.innerHTML = `
     <div class="music-copy">
       <span class="music-note" aria-hidden="true">♫</span>
       <span>
-        <strong>Selamat Ulang Tahun</strong>
-        <span class="music-artist">Jamrud · lagu untuk Sarah</span>
+        <strong>Selamat Ulang Tahun SARAHHHHHHH</strong>
       </span>
     </div>
     <div class="music-controls">
@@ -44,7 +43,7 @@ app.innerHTML = `
         <span aria-hidden="true">▶</span>
       </button>
     </div>
-    <audio class="birthday-audio" src="/audio/jamrud-selamat-ulang-tahun.mp3" preload="metadata" loop></audio>
+    <audio class="birthday-audio" src="/audio/jamrud-selamat-ulang-tahun.mp3" autoplay preload="auto" loop></audio>
   </footer>
 `
 
@@ -56,6 +55,7 @@ const musicFile = app.querySelector('.music-file')
 const musicInput = app.querySelector('.music-input')
 const navLinks = [...app.querySelectorAll('[data-route]')]
 let audioAvailable = false
+let autoplayBlocked = false
 let selectedAudioUrl = null
 
 function renderPage() {
@@ -80,6 +80,13 @@ function updateFrameHeight() {
   if (content) frame.style.height = `${content.scrollHeight}px`
 }
 
+function updateLayoutWidth() {
+  document.documentElement.style.setProperty(
+    '--layout-width',
+    `${document.documentElement.clientWidth}px`,
+  )
+}
+
 function updateMusicStatus(message) {
   musicStatus.textContent = message
 }
@@ -95,7 +102,13 @@ audio.addEventListener('canplay', () => {
   audioAvailable = true
   musicToggle.disabled = false
   musicFile.hidden = true
-  updateMusicStatus(audio.paused ? 'Klik untuk memutar' : 'Sedang diputar')
+  updateMusicStatus(
+    audio.paused
+      ? autoplayBlocked
+        ? 'Ketuk tombol putar jika lagu tidak dimulai'
+        : 'Klik untuk memutar'
+      : 'Sedang diputar',
+  )
 })
 
 audio.addEventListener('play', () => {
@@ -115,6 +128,19 @@ audio.addEventListener('error', () => {
   musicToggle.disabled = true
   musicFile.hidden = false
   updateMusicStatus('Lagu belum tersedia')
+})
+
+audio.addEventListener('loadedmetadata', () => {
+  audio.play().catch((error) => {
+    if (error.name === 'NotAllowedError') {
+      autoplayBlocked = true
+      updateMusicStatus('Ketuk tombol putar jika lagu tidak dimulai')
+      return
+    }
+
+    updateMusicStatus('Lagu tidak dapat diputar. Periksa file audio.')
+    console.error('Gagal memutar lagu ulang tahun:', error)
+  })
 })
 
 musicInput.addEventListener('change', () => {
@@ -145,9 +171,13 @@ musicToggle.addEventListener('click', async () => {
 })
 
 window.addEventListener('hashchange', renderPage)
-window.addEventListener('resize', updateFrameHeight)
-renderPage()
-
-audio.play().catch(() => {
-  if (audioAvailable) updateMusicStatus('Klik untuk memutar')
+window.addEventListener('resize', () => {
+  updateLayoutWidth()
+  updateFrameHeight()
 })
+new ResizeObserver(() => {
+  updateLayoutWidth()
+  updateFrameHeight()
+}).observe(document.documentElement)
+updateLayoutWidth()
+renderPage()

@@ -20,7 +20,7 @@
 }
 
 body {
-  min-width: 320px;
+  width: var(--layout-width, 100%);
   min-height: 100vh;
   margin: 0;
 }
@@ -299,6 +299,53 @@ a {
   .music-toggle {
     width: 38px;
     height: 38px;
+  }
+}
+
+@media (max-width: 400px) {
+  #app {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .music-bar {
+    min-height: 70px;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .music-copy {
+    min-width: 0;
+  }
+
+  .music-copy > span:last-child {
+    min-width: 0;
+  }
+
+  .music-copy strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .music-status {
+    display: none;
+  }
+
+  .music-controls {
+    flex: 0 0 auto;
+    gap: 7px;
+  }
+
+  .music-toggle {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 340px) {
+  .music-artist {
+    display: none;
   }
 }
 
