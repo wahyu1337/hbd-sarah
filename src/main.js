@@ -56,7 +56,30 @@ const musicInput = app.querySelector('.music-input')
 const navLinks = [...app.querySelectorAll('[data-route]')]
 let audioAvailable = false
 let autoplayBlocked = false
+let autoplayAttempted = false
 let selectedAudioUrl = null
+
+async function attemptAutoplay() {
+  if (autoplayAttempted || audio.paused === false) return
+
+  autoplayAttempted = true
+
+  try {
+    await audio.play()
+    autoplayBlocked = false
+  } catch (error) {
+    if (error.name === 'NotAllowedError') {
+      autoplayBlocked = true
+      updateMusicStatus('Browser memblokir autoplay — tekan ▶ untuk memutar')
+      return
+    }
+
+    if (error.name !== 'AbortError') {
+      updateMusicStatus('Lagu tidak dapat diputar. Periksa file audio.')
+      console.error('Gagal memutar lagu ulang tahun:', error)
+    }
+  }
+}
 
 function renderPage() {
   const route = window.location.hash.replace(/^#\/?/, '') || 'home'
@@ -105,10 +128,11 @@ audio.addEventListener('canplay', () => {
   updateMusicStatus(
     audio.paused
       ? autoplayBlocked
-        ? 'Ketuk tombol putar jika lagu tidak dimulai'
+        ? 'Browser memblokir autoplay — tekan ▶ untuk memutar'
         : 'Klik untuk memutar'
       : 'Sedang diputar',
   )
+  attemptAutoplay()
 })
 
 audio.addEventListener('play', () => {
@@ -130,19 +154,6 @@ audio.addEventListener('error', () => {
   updateMusicStatus('Lagu belum tersedia')
 })
 
-audio.addEventListener('loadedmetadata', () => {
-  audio.play().catch((error) => {
-    if (error.name === 'NotAllowedError') {
-      autoplayBlocked = true
-      updateMusicStatus('Ketuk tombol putar jika lagu tidak dimulai')
-      return
-    }
-
-    updateMusicStatus('Lagu tidak dapat diputar. Periksa file audio.')
-    console.error('Gagal memutar lagu ulang tahun:', error)
-  })
-})
-
 musicInput.addEventListener('change', () => {
   const file = musicInput.files?.[0]
   if (!file) return
@@ -153,7 +164,7 @@ musicInput.addEventListener('change', () => {
   audio.load()
   updateMusicStatus('Memuat lagu…')
   audio.play().catch(() => {
-    if (audioAvailable) updateMusicStatus('Klik untuk memutar')
+    updateMusicStatus('Browser memblokir autoplay — tekan ▶ untuk memutar')
   })
 })
 
@@ -161,9 +172,15 @@ musicToggle.addEventListener('click', async () => {
   if (audio.paused) {
     try {
       await audio.play()
+      autoplayBlocked = false
     } catch (error) {
-      updateMusicStatus('Lagu tidak dapat diputar. Periksa file audio.')
-      console.error('Gagal memutar lagu ulang tahun:', error)
+      if (error.name === 'NotAllowedError') {
+        autoplayBlocked = true
+        updateMusicStatus('Browser memblokir pemutaran — izinkan audio atau coba lagi')
+      } else {
+        updateMusicStatus('Lagu tidak dapat diputar. Periksa file audio.')
+        console.error('Gagal memutar lagu ulang tahun:', error)
+      }
     }
   } else {
     audio.pause()
