@@ -1,60 +1,153 @@
 import './style.css'
-import heroImg from './assets/hero.png'
-import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg'
-import { setupCounter } from './counter.js'
+import fotoUrl from './assets/foto.jpeg'
 
-document.querySelector('#app').innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.js</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+const pages = {
+  home: { title: 'Untuk Sarah', url: '/pages/home.html' },
+  surat: { title: 'Sebuah surat kecil', url: '/pages/surat.html' },
+  maaf: { title: 'Dari hati, maafku', url: '/pages/maaf.html' },
+}
 
-<div class="ticks"></div>
+const app = document.querySelector('#app')
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-          <img class="button-icon" src="${javascriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+app.innerHTML = `
+  <header class="site-header">
+    <a class="brand" href="#/home" aria-label="Beranda — Untuk Sarah">
+      <span class="brand-mark" aria-hidden="true">s.</span>
+      <span>sebuah hari untuk Sarah</span>
+    </a>
+    <nav class="site-nav" aria-label="Navigasi utama">
+      <a href="#/home" data-route="home">Beranda</a>
+      <a href="#/surat" data-route="surat">Surat kecil</a>
+      <a href="#/maaf" data-route="maaf">Dari hati</a>
+    </nav>
+  </header>
 
-<div class="ticks"></div>
-<section id="spacer"></section>
+  <main class="page-frame-wrap">
+    <iframe class="page-frame" title="Ucapan ulang tahun untuk Sarah"></iframe>
+  </main>
+
+  <footer class="music-bar">
+    <div class="music-copy">
+      <span class="music-note" aria-hidden="true">♫</span>
+      <span>
+        <strong>Selamat Ulang Tahun</strong>
+        <span class="music-artist">Jamrud · lagu untuk Sarah</span>
+      </span>
+    </div>
+    <div class="music-controls">
+      <span class="music-status" role="status" aria-live="polite">Memeriksa lagu…</span>
+      <label class="music-file" hidden>
+        Pilih lagu
+        <input class="music-input" type="file" accept="audio/*" aria-label="Pilih file lagu ulang tahun" />
+      </label>
+      <button class="music-toggle" type="button" aria-label="Putar lagu" disabled>
+        <span aria-hidden="true">▶</span>
+      </button>
+    </div>
+    <audio class="birthday-audio" src="/audio/jamrud-selamat-ulang-tahun.mp3" preload="metadata" loop></audio>
+  </footer>
 `
 
-setupCounter(document.querySelector('#counter'))
+const frame = app.querySelector('.page-frame')
+const audio = app.querySelector('.birthday-audio')
+const musicToggle = app.querySelector('.music-toggle')
+const musicStatus = app.querySelector('.music-status')
+const musicFile = app.querySelector('.music-file')
+const musicInput = app.querySelector('.music-input')
+const navLinks = [...app.querySelectorAll('[data-route]')]
+let audioAvailable = false
+let selectedAudioUrl = null
+
+function renderPage() {
+  const route = window.location.hash.replace(/^#\/?/, '') || 'home'
+  const page = pages[route] || pages.home
+
+  navLinks.forEach((link) => {
+    const isCurrent = link.dataset.route === (pages[route] ? route : 'home')
+    link.classList.toggle('is-active', isCurrent)
+    if (isCurrent) link.setAttribute('aria-current', 'page')
+    else link.removeAttribute('aria-current')
+  })
+
+  if (frame.dataset.route !== route) {
+    frame.dataset.route = route
+    frame.src = page.url
+  }
+}
+
+function updateFrameHeight() {
+  const content = frame.contentDocument?.documentElement
+  if (content) frame.style.height = `${content.scrollHeight}px`
+}
+
+function updateMusicStatus(message) {
+  musicStatus.textContent = message
+}
+
+frame.addEventListener('load', () => {
+  const photo = frame.contentDocument?.querySelector('[data-photo]')
+  if (photo) photo.src = fotoUrl
+
+  updateFrameHeight()
+})
+
+audio.addEventListener('canplay', () => {
+  audioAvailable = true
+  musicToggle.disabled = false
+  musicFile.hidden = true
+  updateMusicStatus(audio.paused ? 'Klik untuk memutar' : 'Sedang diputar')
+})
+
+audio.addEventListener('play', () => {
+  musicToggle.setAttribute('aria-label', 'Jeda lagu')
+  musicToggle.innerHTML = '<span aria-hidden="true">Ⅱ</span>'
+  updateMusicStatus('Sedang diputar')
+})
+
+audio.addEventListener('pause', () => {
+  musicToggle.setAttribute('aria-label', 'Putar lagu')
+  musicToggle.innerHTML = '<span aria-hidden="true">▶</span>'
+  if (audioAvailable) updateMusicStatus('Lagu dijeda')
+})
+
+audio.addEventListener('error', () => {
+  audioAvailable = false
+  musicToggle.disabled = true
+  musicFile.hidden = false
+  updateMusicStatus('Lagu belum tersedia')
+})
+
+musicInput.addEventListener('change', () => {
+  const file = musicInput.files?.[0]
+  if (!file) return
+
+  if (selectedAudioUrl) URL.revokeObjectURL(selectedAudioUrl)
+  selectedAudioUrl = URL.createObjectURL(file)
+  audio.src = selectedAudioUrl
+  audio.load()
+  updateMusicStatus('Memuat lagu…')
+  audio.play().catch(() => {
+    if (audioAvailable) updateMusicStatus('Klik untuk memutar')
+  })
+})
+
+musicToggle.addEventListener('click', async () => {
+  if (audio.paused) {
+    try {
+      await audio.play()
+    } catch (error) {
+      updateMusicStatus('Lagu tidak dapat diputar. Periksa file audio.')
+      console.error('Gagal memutar lagu ulang tahun:', error)
+    }
+  } else {
+    audio.pause()
+  }
+})
+
+window.addEventListener('hashchange', renderPage)
+window.addEventListener('resize', updateFrameHeight)
+renderPage()
+
+audio.play().catch(() => {
+  if (audioAvailable) updateMusicStatus('Klik untuk memutar')
+})
